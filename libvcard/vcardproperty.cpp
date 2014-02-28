@@ -145,6 +145,7 @@ QList<vCardProperty> vCardProperty::fromByteArray(const QByteArray& data)
         if (line == VC_BEGIN_TOKEN || line == VC_END_TOKEN)
             break;
 
+        //URLs have tokens, only split on the first ':' or properly handle escaped assignments '\:'
         QStringList tokens = line.split(VC_ASSIGNMENT_TOKEN);
         if (tokens.count() >= 2)
         {
@@ -155,7 +156,18 @@ QList<vCardProperty> vCardProperty::fromByteArray(const QByteArray& data)
             {
                 vCardParamList params = vCardParam::fromByteArray(property_tokens.join(QString(VC_SEPARATOR_TOKEN)).toUtf8());
 
-                properties.append(vCardProperty(name, tokens.at(1), params));
+                QString token;
+                for(int i=1; i<tokens.count(); i++){
+                    token.append( tokens.at(i) );
+
+                    if(i+1 < tokens.count()){
+                        token.append(VC_ASSIGNMENT_TOKEN);
+                    }
+                }
+
+                token.replace("\\:", ":");
+
+                properties.append(vCardProperty(name, token, params));
             }
         }
     }

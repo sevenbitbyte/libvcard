@@ -21,6 +21,7 @@
  */
 
 #include "vcard.h"
+#include <QtCore>
 #include <QtCore/QFile>
 
 vCard::vCard()
@@ -204,23 +205,21 @@ QList<vCard> vCard::fromByteArray(const QByteArray& data)
     {
         line = line.simplified();
 
-        if ((line == VC_BEGIN_TOKEN) && !started)
+        if( (line == VC_BEGIN_TOKEN) && !started) {
             started = true;
-
-        else if ((line == VC_END_TOKEN) && started)
-        {
+        }
+        else if( (line == VC_END_TOKEN) && started) {
             vcards.append(current);
+            current = vCard();
             started = false;
         }
-
-        else if (started)
-        {
+        else if (started) {
             vCardPropertyList props = vCardProperty::fromByteArray(line);
             current.addProperties(props);
         }
     }
-   
-   return vcards;
+
+    return vcards;
 }
 
 QList<vCard> vCard::fromFile(const QString& filename)

@@ -1,37 +1,64 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+cmake_minimum_required (VERSION 2.8.8)
+project (vcard)
 
-SET(CMAKE_ALLOW_LOOSE_LOOP_CONSTRUCTS TRUE)
+if(CMAKE_BUILD_TYPE STREQUAL Release)
+  SET(CMAKE_BUILD_TYPE Release)
+  message("Release mode")
+else()
+  SET(CMAKE_BUILD_TYPE Debug)
+  SET(CMAKE_CXX_FILES "-g -Wall")
+  message("Debug mode")
+endif()
+
+#find QT libraries
+find_package(Qt5Core REQUIRED)
+
+# Instruct CMake to run moc automatically when needed.
+set(CMAKE_AUTOMOC ON)
+
+# As moc files are generated in the binary dir, tell CMake
+# to always look for includes there:
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+INCLUDE_DIRECTORIES( ${CMAKE_CURRENT_BINARY_DIR} )
+
+set(VCARD_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libvcard)
+set(VCARD_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include/vcard)
+
+#Configure output directories
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
+set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib)
 
 
-
-################################################################################
-# Qt4
-################################################################################
-FIND_PACKAGE(Qt4 REQUIRED)
-
-# overide some value for mingw32
-IF(TARGET_WINDOWS)
-  SET(QT_LIBS QtCore4)
-ELSE()
-  SET(QT_LIBS ${QT_LIBRARIES})
-ENDIF()
-
-################################################################################
+include_directories(BEFORE
+    ${VCARD_INCLUDE_DIR}
+    ${VCARD_SOURCE_DIR}
+    ${Qt5Core_INCLUDE_DIRS}
+    ${Qt5Network_INCLUDE_DIRS}
+    ${Qt5Sql_INCLUDE_DIRS}
+)
 
 
+set(VCARD_LIB_SOURCE
+    ${VCARD_SOURCE_DIR}/vcard.cpp
+    ${VCARD_SOURCE_DIR}/vcardparam.cpp
+    ${VCARD_SOURCE_DIR}/vcardproperty.cpp
+)
 
-################################################################################
-# libvcard
-################################################################################
-FILE(GLOB vcard_cpp libvcard/*.cpp)
-FILE(GLOB vcard_h include/vcard/*.h)
-QT4_WRAP_CPP(vcard_moc ${libvcard_h})
 
-INCLUDE(${QT_USE_FILE})
-ADD_DEFINITIONS(${QT_DEFINITIONS})
+set(VCARD_LIB_HEADERS
+    ${VCARD_INCLUDE_DIR}/libvcard_global.h
+    ${VCARD_INCLUDE_DIR}/vcard.h
+    ${VCARD_INCLUDE_DIR}/vcardparam.h
+    ${VCARD_INCLUDE_DIR}/vcardproperty.h
+)
 
-INCLUDE_DIRECTORIES(AFTER SYSTEM include/vcard ${QT_INCLUDES} ${CMAKE_BINARY_DIR})
-ADD_LIBRARY(vcard ${vcard_cpp} ${libvcard_h} ${vcard_moc})
+add_library(vcard ${VCARD_LIB_SOURCE} ${VCARD_LIB_HEADERS})
+qt5_use_modules(vcard Core)
 
-TARGET_LINK_LIBRARIES(vcard ${QT_LIBS})
-################################################################################
+INSTALL(DIRECTORY ${VCARD_INCLUDE_DIR} DESTINATION include)
+
+INSTALL(TARGETS vcard
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+)
